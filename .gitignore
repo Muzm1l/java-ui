@@ -1,0 +1,33 @@
+# Maven writes compiled classes and the jar here. Run mvn package to make them again.
+target/
+
+# A class file left outside target/
+*.class
+
+# Logs
+*.log
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code / Cursor
+.vscode/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+
+# macOS and Windows
+.DS_Store
+Thumbs.db
