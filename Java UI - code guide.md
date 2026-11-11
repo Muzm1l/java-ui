@@ -4,9 +4,9 @@ This project is a practice screen you can copy into a larger Java 1.6 program.
 
 | File | Job |
 |---|---|
-| `src/main/java/page/FunctionKeyBar.java` | The footer. Draws the ten buttons. Does not decide what they do. |
+| `src/main/java/page/FunctionKeyBar.java` | The footer. Draws the twelve buttons, F1 through F12. Does not decide what they do. |
 | `src/main/java/page/FunctionPage.java` | The window. Owns the one listener and the functions (`create()` and the rest). |
-| `src/main/java/page/WeaponConfigurationPanel.java` | The black form on the right. Built from the pieces in `page/form/`. |
+| `src/main/java/page/WeaponConfigurationPanel.java` | The Create Engagement form on the right. Built from the pieces in `page/form/`. |
 | `src/main/java/page/form/` | The reusable rows, sections, and option groups. |
 | `pom.xml` | Tells Maven to compile this as Java 1.6 and which class to start. |
 | `.gitignore` | Tells git which generated files to leave out of the repository. |
@@ -45,7 +45,7 @@ An import lets this file use a class that lives in another package. Nothing here
 | `BorderLayout` | Puts the button row along the bottom of the footer. |
 | `Color` | The blue background and the black button border. |
 | `Dimension` | Width and height in pixels. |
-| `FlowLayout` | Lays the ten buttons in one left-to-right row. |
+| `FlowLayout` | Lays the twelve buttons in one left-to-right row. |
 | `ActionEvent` | The object Swing sends when a button or a key fires. |
 | `ActionListener` | The type of the one listener the screen passes in. |
 | `KeyEvent` | The codes for the real F1–F10 keys. |
@@ -74,15 +74,15 @@ Swing components can be saved to disk. Java asks every such class for a version 
 `static` — it belongs to the class, not to one footer.
 `final` — it never changes.
 
-### `KEYS` — the ten button labels
+### `KEYS` — the twelve button labels
 
 ```java
 public static final String[] KEYS = {
-    "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F0"
+    "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"
 };
 ```
 
-This is the list of labels, left to right. There are always ten slots, even if a function is still empty.
+This is the list of labels, left to right. There are always twelve slots, even if a function is still empty.
 
 The same string is used for three things:
 
@@ -102,11 +102,11 @@ private static final int[] KEY_CODES = {
 };
 ```
 
-`VK_F1` means “the F1 key on the keyboard”. A keyboard has F1 through F12. It does not have a key named F0.
+`VK_F1` means “the F1 key on the keyboard”. The list runs through `VK_F12`, one code for each label.
 
-Slot 0 of `KEYS` is `"F1"` and slot 0 of `KEY_CODES` is `VK_F1`. They stay in pairs. The last pair is the label `"F0"` with the physical key `VK_F10`.
+Slot 0 of `KEYS` is `"F1"` and slot 0 of `KEY_CODES` is `VK_F1`. They stay in pairs. The last three pairs are F10, F11, and F12 with `VK_F10`, `VK_F11`, and `VK_F12`.
 
-`private` because only the footer needs the key codes. The screen talks in labels (`"F1"`, `"F0"`), not in `VK_` numbers.
+`private` because only the footer needs the key codes. The screen talks in labels (`"F1"`, `"F12"`), not in `VK_` numbers.
 
 ### `barHeight`
 
@@ -160,13 +160,13 @@ A second panel holds the buttons in one horizontal line. `FlowLayout.LEFT` start
 
 This row is the only child of the footer. The footer stays one component from the screen’s point of view: the screen adds `FunctionKeyBar`, and never sees `row`.
 
-### The loop that builds the ten buttons
+### The loop that builds the twelve buttons
 
 ```java
 for (int i = 0; i < KEYS.length; i++) {
 ```
 
-`i` starts at 0 and stops before 10. `KEYS.length` is 10. Each pass builds one button.
+`i` starts at 0 and stops before 12. `KEYS.length` is 12. Each pass builds one button.
 
 ```java
 String key = KEYS[i];
@@ -202,14 +202,14 @@ Light-blue face, black border two pixels thick. `setFocusPainted(false)` turns o
 button.addActionListener(listener);
 ```
 
-Registers the screen’s listener on this button. The same `listener` object is passed on every pass of the loop. That is the “one listener for all ten buttons” rule. There is no second listener hiding inside the footer.
+Registers the screen’s listener on this button. The same `listener` object is passed on every pass of the loop. That is the “one listener for all twelve buttons” rule. There is no second listener hiding inside the footer.
 
 ```java
 row.add(button);
 bindKey(KEY_CODES[i], key, listener);
 ```
 
-Puts the button into the row, then connects the matching physical key (F1, or F10 for the F0 button) to the same listener.
+Puts the button into the row, then connects the matching physical key (F1 through F12) to the same listener.
 
 After the loop:
 
@@ -281,7 +281,7 @@ listener.actionPerformed(new ActionEvent(
         command));
 ```
 
-This calls the screen’s listener directly, as if a button had been clicked. The third argument, `command`, becomes `event.getActionCommand()` on the screen. For the F1 key that is `"F1"`. For the F10 key that is `"F0"`.
+This calls the screen’s listener directly, as if a button had been clicked. The third argument, `command`, becomes `event.getActionCommand()` on the screen. For the F1 key that is `"F1"`. For the F12 key that is `"F12"`.
 
 `FunctionKeyBar.this` is the footer object. A plain `this` inside the anonymous class would mean the action, not the footer. The screen’s listener does not look at the source. It looks at the command. Either way the call is safe.
 
@@ -316,7 +316,7 @@ private final ActionListener functionListener = new ActionListener() {
         } else if ("F2".equals(key)) {
             onF2();
         }
-        // ... F3 through F0
+        // ... F3 through F12
     }
 };
 ```
@@ -392,7 +392,7 @@ setLocationRelativeTo(null);
 
 The constructor builds the window. It does not show it. `setVisible(true)` in `main` does that.
 
-### `create()` and `onF2()` … `onF0()`
+### `create()` and `onF2()` … `onF12()`
 
 ```java
 private void create() {
@@ -402,9 +402,9 @@ private void create() {
 
 F1 is the only key with a real name in this sample, because that is the function you asked for. The body is a stand-in. In the other project, replace the `setText` line with the call that already exists there, for example the method that opens the create form.
 
-`onF2` through `onF0` are the same shape. They exist so each key already has a method to fill in. `private` means only this screen calls them. The listener is the only caller.
+`onF2` through `onF12` are the same shape. They exist so each key already has a method to fill in. `private` means only this screen calls them. The listener is the only caller.
 
-`onF0` matches the button labelled F0. The physical key is F10, because that is what `KEY_CODES` binds.
+`onF10`, `onF11`, and `onF12` match the buttons labelled F10, F11, and F12, and the physical keys of the same name.
 
 ### `main`
 
@@ -482,7 +482,7 @@ Using F1 as the example.
 9. `"F1".equals(key)` is true, so the listener calls `create()`.
 10. `create()` sets the label to `F1 called create()`.
 
-F2 through F9 follow the same steps and land in `onF2` through `onF9`. The F0 button and the F10 key both arrive with command `"F0"` and land in `onF0`.
+F2 through F12 follow the same steps and land in `onF2` through `onF12`. The F12 button and the F12 key both arrive with command `"F12"` and land in `onF12`.
 
 ---
 
@@ -524,9 +524,9 @@ mvn -q package
 $JAVA6_HOME/bin/java -jar target/java-ui-1.0.jar
 ```
 
-Click **F1** or press the F1 key. The label on the blue page reads `F1 called create()`. The other buttons report their own names. F10 on the keyboard reports `F0`.
+Click **F1** or press the F1 key. The label on the blue page reads `F1 called create()`. The other buttons report their own names. F10, F11, and F12 do the same for those keys.
 
-The black form on the right is the Weapon Configuration screen. **OK** writes the two selected choices into that same label. **Cancel** writes `Cancel`.
+The dark form on the right is Create Engagement. The bottom **OK** copies every field into an `Engagement` and passes that object to `EngagementService.create`. **Cancel** does not. The **×** hides the form. How that hand-off works is in `Create Engagement - how values reach the backend.md`.
 
 ---
 
@@ -541,12 +541,17 @@ FunctionPage
     |
     +-- WeaponConfigurationPanel, right     BorderLayout.EAST
             |
+            +-- title "Create Engagement" and the close mark
             +-- FormStack          vertical pile, scrolls
-                    |
-                    +-- FormRow            label + one control
-                    +-- SectionPanel       triangle title, opens and closes
-                            |
-                            +-- OptionGroup    radio buttons, one choice
+            |       |
+            |       +-- FormRow         label + one control
+            |       +-- Heading         cyan section title
+            |       +-- FormCard        bordered group
+            |               |
+            |               +-- GroupLabel    title with a line on each side
+            |               +-- OptionGroup   radio buttons, one choice
+            |               +-- CheckGroup    check boxes, any number ticked
+            +-- Cancel and OK, fixed along the bottom
 ```
 
 To make a similar screen, copy `WeaponConfigurationPanel`, change the title, and add your own rows and sections. You do not copy layout code into `FunctionPage`.
@@ -558,12 +563,12 @@ In `FunctionPage` the window has two regions above the footer:
 ```java
 JPanel body = new JPanel(new BorderLayout());
 body.add(blue, BorderLayout.CENTER);
-body.add(weapon, BorderLayout.EAST);
+body.add(form, BorderLayout.EAST);
 ```
 
 `CENTER` is the blue page. `EAST` is the form. The footer stays `SOUTH` of the whole window, so the function keys still run along the bottom.
 
-`weapon` is `final` because the OK and Cancel listeners are anonymous classes, and Java 6 only lets an anonymous class read a local variable when that variable is `final`.
+`form` is `final` because the OK and Cancel listeners are anonymous classes, and Java 6 only lets an anonymous class read a local variable when that variable is `final`.
 
 ### `Mono` — the shared look
 
@@ -599,55 +604,76 @@ body.add(weapon, BorderLayout.EAST);
 ### `FormRow` — label plus anything
 
 ```java
-new FormRow("Target Selection", targetSelection)
+new FormRow("Field 5 *", field5)
 ```
 
-The label is fixed at 150 pixels. The component on the right takes the rest of the line. That component can be a text field, a combo, or a small panel. The Track line is a small panel: a short text field and a check box side by side, passed in as the second argument.
+The label is fixed at 150 pixels. The component on the right takes the rest of the line. That component can be a text field, a combo, or a small panel. Field 5 is the combo on that line.
 
 ### `OptionGroup` — one choice among several
 
 ```java
-new OptionGroup(new String[] {"Offset Engm", "Real Engm"}, 0, 2)
+new OptionGroup(new String[] {"Choice A", "Choice B"}, 0, 2)
 ```
 
 | Argument | Meaning |
 |---|---|
 | the string array | The choices, left to right, then the next line. |
-| `0` | Which choice starts selected. The first one. Pass `-1` for none, as Linked Launch and Tube Select do. |
+| `0` | Which choice starts selected. The first one. Pass `-1` for none. Group 3 starts on the second choice. |
 | `2` | How many choices sit on one line. |
 
 The buttons share one `ButtonGroup`, so selecting one clears the others. `getSelected()` returns the text of the selected button, or `""` when nothing is selected.
 
-Tube Select passes six names and `2` columns. Grid layout fills across, so the array order is Tube 6, Tube 5, Tube 4, Tube 3, Tube 2, Tube 1. That puts 6, 4, 2 down the left and 5, 3, 1 down the right.
+Group 4 passes six names and `2` columns. Grid layout fills across, so the array order is Choice 6, Choice 5, Choice 4, Choice 3, Choice 2, Choice 1. That puts 6, 4, 2 down the left and 5, 3, 1 down the right.
 
 ### `SectionPanel` — a block you can close
 
 ```java
-SectionPanel section = new SectionPanel("Weapon Selection");
-section.addContent(weapon);
+SectionPanel section = new SectionPanel("Section 1");
+section.addContent(group1);
 ```
 
 The header is a triangle and a title. A mouse click calls `setOpen`. Open shows a down triangle and the body. Closed shows a sideways triangle and hides the body. `addContent` is how a row joins that body.
 
-### `WeaponConfigurationPanel` — this particular screen
+### `Heading`, `GroupLabel`, `FormCard`, `CheckGroup`
 
-This class only chooses what the pieces say. The order in `build()` is the order on screen:
+`Heading` is a cyan title, such as “Section 2”. It does not open or close.
 
-1. Title, “Weapon Configuration”.
-2. `FormRow` for Target Selection, Track, and Comments.
-3. Cancel and OK, aligned to the right.
-4. Four sections: Engagement Configuration, Weapon Selection, Linked Launch, Tube Select. Each section’s body is an `OptionGroup`.
-5. Weapon Configuration Selection: a combo, the words “Target Parameters”, then five pairs of short fields.
+`GroupLabel` is the smaller title inside a card, with a horizontal line on each side. “Group 4” and “Group 3” are group labels.
 
-The pairs are Track/RB, TB/DP, TR/TCo, TSp/Type, Lng/Cat. Each name is stored in a map when the field is built:
+`FormCard` is the bordered box around one group. `addRow` puts the next line inside that box.
+
+`CheckGroup` is the check-box version of `OptionGroup`. More than one box can be ticked. `getSelected()` joins the ticked labels with a comma.
+
+`HintField` and `HintArea` show grey hint text (“Enter field 1”, “Enter field 6”). Java 6 has no placeholder on a text field, so these classes clear the hint when the field gains focus and put it back if the user leaves the field empty. `getValue()` returns `""` while the hint is still showing.
+
+`SectionPanel`, the triangle that opens and closes, is still in `page/form` for a screen that needs it. Create Engagement does not use it.
+
+### `WeaponConfigurationPanel` — Create Engagement
+
+This class only chooses what the pieces say. The order in `form()` is the order on screen:
+
+1. Title “Create Engagement”, and **×** to hide the panel.
+2. Field 1 and Field 2. Both are required on the label (`*`) and start as hints.
+3. Section 1, inside one card:
+   - Group 1: Choice A or Choice B. Choice A starts selected.
+   - Group 2: Choice C and Choice D. Either, both, or neither.
+   - Group 3: Choice E or Choice F. Choice F starts selected. Under that, Field 3 starts at `0`, with its own small OK.
+   - Group 4: six choices, two per line. Choice 1 starts selected.
+   - Group 5: the combo “Choice G”.
+4. Section 2: P1/P2, P3/P4, P5/P6, P7/Field 4, P8/P9. Field 4 is a combo set to Choice H. The numbers are sample values.
+5. Section 3: Field 5, a combo set to “Choice I”.
+6. Section 4, a hint area (Field 6).
+7. Cancel, and the cyan OK, fixed under the scrolling form.
+
+Each parameter name is stored in a map when the field is built:
 
 ```java
 private final Map<String, JTextField> parameters = new LinkedHashMap<String, JTextField>();
 ```
 
-`LinkedHashMap` is a Java 6 map that remembers insertion order. `getParameter("TB")` looks the field up and returns what was typed. A missing name returns `""` instead of throwing.
+`LinkedHashMap` is a Java 6 map that remembers insertion order. `getParameter("P1")` looks the field up and returns what was typed. A missing name returns `""` instead of throwing.
 
-The constructor switches to the classic Metal look before it builds the controls, then puts the previous look back in a `finally` block. The `finally` runs even if building throws. Controls already created keep the black Metal look. The function-key bar is created after this constructor returns, so it keeps the normal look.
+The constructor switches to the classic Metal look before it builds the controls, then puts the previous look back in a `finally` block. The `finally` runs even if building throws. Controls already created keep this form’s colours. The function-key bar is created after this constructor returns, so it keeps the normal look.
 
 ### A second screen, same pieces
 
@@ -663,4 +689,4 @@ section.addContent(mode);
 form.add(section);
 ```
 
-Then add the new panel the same way the weapon panel is added: `body.add(yourPanel, BorderLayout.EAST)`, or `CENTER` if it should fill the page. One screen, one class. The pieces in `page.form` stay shared.
+Then add the new panel the same way this form is added: `body.add(yourPanel, BorderLayout.EAST)`, or `CENTER` if it should fill the page. One screen, one class. The pieces in `page.form` stay shared.

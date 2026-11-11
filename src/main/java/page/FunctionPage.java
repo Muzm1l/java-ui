@@ -12,8 +12,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import page.backend.EngagementService;
+import page.model.Engagement;
+
 /**
- * The screen. One listener handles all ten footer buttons.
+ * The screen. One listener handles all twelve footer buttons.
  * F1 calls create(). The other methods are empty on purpose:
  * fill those in with the functions from the real project.
  *
@@ -52,8 +55,12 @@ public class FunctionPage extends JFrame {
                 onF8();
             } else if ("F9".equals(key)) {
                 onF9();
-            } else if ("F0".equals(key)) {
-                onF0();
+            } else if ("F10".equals(key)) {
+                onF10();
+            } else if ("F11".equals(key)) {
+                onF11();
+            } else if ("F12".equals(key)) {
+                onF12();
             }
         }
     };
@@ -70,13 +77,17 @@ public class FunctionPage extends JFrame {
         resultLabel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
         blue.add(resultLabel, BorderLayout.NORTH);
 
-        final WeaponConfigurationPanel weapon = new WeaponConfigurationPanel();
-        weapon.getOkButton().addActionListener(new ActionListener() {
+        final WeaponConfigurationPanel form = new WeaponConfigurationPanel();
+        final EngagementService backend = new EngagementService();
+        form.getOkButton().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                resultLabel.setText("OK  " + weapon.getEngagement() + " / " + weapon.getWeapon());
+                Engagement engagement = form.readForm();
+                backend.create(engagement);
+                resultLabel.setText("Saved " + engagement.getField1()
+                        + " / " + engagement.getGroup1());
             }
         });
-        weapon.getCancelButton().addActionListener(new ActionListener() {
+        form.getCancelButton().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 resultLabel.setText("Cancel");
             }
@@ -85,7 +96,7 @@ public class FunctionPage extends JFrame {
         JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
         body.add(blue, BorderLayout.CENTER);
-        body.add(weapon, BorderLayout.EAST);
+        body.add(form, BorderLayout.EAST);
 
         page.add(body, BorderLayout.CENTER);
 
@@ -144,9 +155,19 @@ public class FunctionPage extends JFrame {
         resultLabel.setText("F9");
     }
 
-    /** F0. On the keyboard this is the F10 key. */
-    private void onF0() {
-        resultLabel.setText("F0");
+    /** F10. */
+    private void onF10() {
+        resultLabel.setText("F10");
+    }
+
+    /** F11. */
+    private void onF11() {
+        resultLabel.setText("F11");
+    }
+
+    /** F12. */
+    private void onF12() {
+        resultLabel.setText("F12");
     }
 
     public static void main(String[] args) {

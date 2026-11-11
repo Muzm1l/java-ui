@@ -21,7 +21,7 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 
 /**
- * Shared black-and-white look.
+ * Shared colours for the dark forms.
  * A new screen calls these methods so it matches this one
  * without copying colour and border lines into every class.
  *
@@ -29,12 +29,19 @@ import javax.swing.border.Border;
  */
 public final class Mono {
 
-    public static final Color BACKGROUND = Color.BLACK;
+    public static final Color BACKGROUND = new Color(11, 22, 34);
     public static final Color FOREGROUND = Color.WHITE;
+    public static final Color ACCENT = new Color(0, 214, 214);
+    public static final Color FIELD = Color.WHITE;
+    public static final Color FIELD_TEXT = new Color(20, 28, 38);
+    public static final Color MUTED = new Color(130, 140, 150);
+    public static final Color RULE = new Color(70, 90, 110);
     public static final Font FONT = new Font("Dialog", Font.PLAIN, 13);
-    public static final Font TITLE_FONT = new Font("Dialog", Font.BOLD, 16);
+    public static final Font TITLE_FONT = new Font("Dialog", Font.BOLD, 18);
+    public static final Font HEADING_FONT = new Font("Dialog", Font.BOLD, 15);
 
-    private static final Border LINE = BorderFactory.createLineBorder(FOREGROUND);
+    private static final Border LINE = BorderFactory.createLineBorder(RULE);
+    private static final Border FIELD_LINE = BorderFactory.createLineBorder(new Color(210, 214, 220));
 
     private Mono() {
     }
@@ -46,30 +53,41 @@ public final class Mono {
         component.setFont(FONT);
     }
 
-    public static JTextField text(int columns) {
+    /** White input. The text is dark so it can be read on the white field. */
+    public static JTextField field(int columns) {
         JTextField field = new JTextField(columns);
-        paint(field);
-        field.setCaretColor(FOREGROUND);
-        field.setBorder(LINE);
+        styleField(field);
+        field.setForeground(FIELD_TEXT);
         return field;
     }
 
     public static JTextArea area(int rows, int columns) {
         JTextArea area = new JTextArea(rows, columns);
-        paint(area);
-        area.setCaretColor(FOREGROUND);
+        styleField(area);
+        area.setForeground(FIELD_TEXT);
+        area.setCaretColor(FIELD_TEXT);
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
-        area.setBorder(LINE);
         return area;
     }
 
+    public static void styleField(JComponent component) {
+        component.setOpaque(true);
+        component.setBackground(FIELD);
+        component.setFont(FONT);
+        component.setBorder(FIELD_LINE);
+        if (component instanceof JTextField) {
+            ((JTextField) component).setCaretColor(FIELD_TEXT);
+        }
+    }
+
     /** Java 6: use the raw JComboBox, not JComboBox&lt;String&gt;. */
-    public static JComboBox combo() {
-        JComboBox box = new JComboBox();
-        box.addItem("");
-        paint(box);
-        box.setBorder(LINE);
+    public static JComboBox combo(String[] items) {
+        JComboBox box = new JComboBox(items);
+        box.setBackground(FIELD);
+        box.setForeground(FIELD_TEXT);
+        box.setFont(FONT);
+        box.setBorder(FIELD_LINE);
         box.setRenderer(new DefaultListCellRenderer() {
             private static final long serialVersionUID = 1L;
 
@@ -77,7 +95,11 @@ public final class Mono {
                     JList list, Object value, int index, boolean selected, boolean focus) {
                 Component row = super.getListCellRendererComponent(list, value, index, selected, focus);
                 if (row instanceof JComponent) {
-                    Mono.paint((JComponent) row);
+                    JComponent cell = (JComponent) row;
+                    cell.setOpaque(true);
+                    cell.setBackground(FIELD);
+                    cell.setForeground(FIELD_TEXT);
+                    cell.setFont(FONT);
                 }
                 return row;
             }
@@ -85,18 +107,31 @@ public final class Mono {
         return box;
     }
 
+    /** Dark button with a light border. Cancel, and the small OK by a field. */
     public static JButton button(String text) {
         JButton button = new JButton(text);
         paint(button);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createCompoundBorder(
                 LINE,
-                BorderFactory.createEmptyBorder(4, 14, 4, 14)));
+                BorderFactory.createEmptyBorder(4, 16, 4, 16)));
         return button;
     }
 
-    public static JCheckBox check() {
-        JCheckBox box = new JCheckBox();
+    /** The filled cyan OK at the bottom of a form. */
+    public static JButton accentButton(String text) {
+        JButton button = new JButton(text);
+        button.setBackground(ACCENT);
+        button.setForeground(new Color(8, 24, 34));
+        button.setFont(new Font("Dialog", Font.BOLD, 13));
+        button.setOpaque(true);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(6, 22, 6, 22));
+        return button;
+    }
+
+    public static JCheckBox check(String text) {
+        JCheckBox box = new JCheckBox(text);
         paint(box);
         box.setFocusPainted(false);
         box.setIcon(new MarkIcon(false, false));
@@ -139,7 +174,7 @@ public final class Mono {
         public void paintIcon(Component component, Graphics graphics, int x, int y) {
             Graphics2D g = (Graphics2D) graphics.create();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setColor(FOREGROUND);
+            g.setColor(selected ? ACCENT : new Color(190, 198, 206));
             if (radio) {
                 g.drawOval(x, y, size - 1, size - 1);
                 if (selected) {

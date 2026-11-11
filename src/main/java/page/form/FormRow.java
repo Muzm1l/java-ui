@@ -14,7 +14,7 @@ public class FormRow extends Block {
 
     private static final long serialVersionUID = 1L;
 
-    private static final int LABEL_WIDTH = 150;
+    private static final int LABEL_WIDTH = 168;
 
     public FormRow(String labelText, JComponent field) {
         super();

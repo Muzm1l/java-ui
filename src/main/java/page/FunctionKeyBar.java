@@ -16,7 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 /**
- * Footer of ten function buttons: F1 F2 F3 F4 F5 F6 F7 F8 F9 F0.
+ * Footer of twelve function buttons: F1 through F12.
  *
  * This class only draws the bar. It does not decide what the keys do.
  * Pass in the one listener from the screen that owns the functions.
@@ -27,10 +27,9 @@ public class FunctionKeyBar extends JPanel {
     private static final long serialVersionUID = 1L;
 
     public static final String[] KEYS = {
-        "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F0"
+        "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"
     };
 
-    /* Keyboards have F10, not F0. The tenth button is labelled F0 and follows the F10 key. */
     private static final int[] KEY_CODES = {
         KeyEvent.VK_F1,
         KeyEvent.VK_F2,
@@ -41,7 +40,9 @@ public class FunctionKeyBar extends JPanel {
         KeyEvent.VK_F7,
         KeyEvent.VK_F8,
         KeyEvent.VK_F9,
-        KeyEvent.VK_F10
+        KeyEvent.VK_F10,
+        KeyEvent.VK_F11,
+        KeyEvent.VK_F12
     };
 
     private final int barHeight;
