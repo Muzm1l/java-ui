@@ -362,11 +362,16 @@ One object of this class is the sample window. It owns the blue page, the form, 
 
 | Member | What it does |
 |---|---|
-| `resultLabel` | The `JLabel` in the blue area. It starts as a single space so the label has a line height. OK sets it to `Saved `, the engagement number, ` / `, and the engagement state. Cancel sets it to `Cancel`. F1 sets it to `F1 called create()`. F2 through F12 set it to the key name. |
-| `functionListener` | One `ActionListener` for all twelve keys. It reads `getActionCommand()` and calls `create`, `onF2`, … `onF12`. |
+| `resultLabel` | The `JLabel` in the blue area. It starts as a single space so the label has a line height. OK sets it to `Saved `, the engagement number, ` / `, and the engagement state. Cancel sets it to `Cancel`. F1 sets it to `F1 called create()`. The other first-set keys write their own name. F4 writes which set is showing. |
+| `functionListener` | One `ActionListener` for every footer button. It reads `getActionCommand()`. `"F4"` calls `onF4`. `"F1"` calls `create`. `"B1"` calls `onB1`. The rest follow the same pattern. |
+| `footer` | The `FunctionKeyBar`. A field, so `onF4` can call `setLabels` after the window exists. |
+| `secondSet` | False on the first set (F1–F12). True after F4, until F4 is pressed again. |
+| `SECOND_KEYS` | The twelve captions of the second set: B1, B2, B3, F4, B5 through B12. |
 | `FunctionPage()` | Builds the tree, wires OK and Cancel, sizes the window, centres it. |
 | `create()` | F1. In this sample it only changes the label. In the other project this is where that key’s real work goes. |
-| `onF2()` … `onF12()` | Empty of real work. Each one writes its key name on the label so you can see the click arrived. |
+| `onF4()` | Swaps the footer to the second set, or back to the first set. |
+| `onF2()` … `onF12()` | First-set operations, except F4. Each one writes its key name on the label. |
+| `onB1()` … `onB12()` | Second-set operations. There is no `onB4`. Slot 4 is F4 in both sets. |
 | `main` | Sends window creation to the event thread and shows the frame. |
 
 The OK listener is separate from `functionListener`. F1 does not press the form’s OK. The form’s OK does not call `create()`. They are two different buttons.
@@ -383,27 +388,31 @@ It draws twelve buttons and binds F1–F12. It does not decide what the keys mea
 
 | Member | What it does |
 |---|---|
-| `KEYS` | The twelve labels, `"F1"` through `"F12"`. Public so another class could read them. The labels, the action commands, and the key-binding names are these same strings. |
-| `KEY_CODES` | `KeyEvent.VK_F1` through `VK_F12`, in the same order as `KEYS`. Private. |
+| `KEYS` | The first twelve labels, `"F1"` through `"F12"`. Public. `onF4` passes this array back when it restores the first set. |
+| `KEY_CODES` | `KeyEvent.VK_F1` through `VK_F12`, in the same order as `KEYS`. Private. The physical keys never change. |
+| `FIRST_FACE` | Light blue `(186, 224, 248)`, the first set. |
+| `SECOND_FACE` | Light orange `(255, 214, 153)`, the second set. |
+| `buttons` | The twelve `JButton` objects. `setLabels` changes these. It does not create a new row. |
 | `barHeight` | The height, in pixels, passed to the constructor. Stored so `getPreferredSize` can force it. |
-| Constructor `(barHeight, buttonWidth, buttonHeight, listener)` | Builds the row. This sample calls `new FunctionKeyBar(64, 56, 40, functionListener)`. |
+| Constructor `(barHeight, buttonWidth, buttonHeight, listener)` | Builds the row, then `setLabels(KEYS, FIRST_FACE)`. This sample calls `new FunctionKeyBar(64, 56, 40, functionListener)`. |
+| `setLabels(labels, face)` | Writes a new caption, command, and face colour on each button, and rebinds that slot’s physical key. `labels` must have twelve strings. |
 | `getPreferredSize` | The superclass width, with the height replaced by `barHeight`. |
 | `getMinimumSize` | The same as the preferred size, so a layout cannot squash the bar below that height. |
 | `getMaximumSize` | The preferred height, and a width of `Integer.MAX_VALUE`, so a vertical layout may stretch the bar across the window. |
-| `bindKey` | Connects one physical key to the shared listener. |
+| `bindKey` | Connects one physical key to the shared listener. The map name is the key code, so a later call replaces the previous action. |
 
 Inside the constructor the bar is a `BorderLayout`, opaque, colour `(168, 214, 245)`. A transparent `FlowLayout` row is added at `SOUTH`, so the buttons sit on the bottom of the 64-pixel strip and the spare blue is above them.
 
-Each button:
+Each button is created empty, then `setLabels` fills it:
 
-1. `new JButton(key)` shows `F1` and the rest.
-2. `setActionCommand(key)` stores the same string for the listener.
-3. `setPreferredSize(new Dimension(buttonWidth, buttonHeight))` makes every key the same 56 by 40.
-4. Background `(186, 224, 248)`, opaque, focus rectangle off, black 2-pixel border.
-5. `addActionListener(listener)` — the single listener from the page, not a new listener per button.
+1. `setText` shows the caption, `F1` or `B1`.
+2. `setActionCommand` stores that same string for the listener.
+3. `setPreferredSize(new Dimension(buttonWidth, buttonHeight))` makes every key the same 56 by 40. That line is in the constructor, before `setLabels`.
+4. The face colour comes from `setLabels`. The first call uses `FIRST_FACE`. Opaque, focus rectangle off, black 2-pixel border.
+5. `addActionListener(listener)` — the single listener from the page, not a new listener per button. That line is also in the constructor.
 6. `bindKey` for the matching `VK_F*` code.
 
-`bindKey` puts `KeyStroke.getKeyStroke(keyCode, 0)` into the window input map under the name `"function-" + command`, and puts an `AbstractAction` in the action map. When the key fires, that action calls `listener.actionPerformed` with a new `ActionEvent`. The source is the bar (`FunctionKeyBar.this`). The command is `"F1"` or whichever key it was. The page never looks at the source.
+`bindKey` puts `KeyStroke.getKeyStroke(keyCode, 0)` into the window input map under the name `"function-"` plus the key code, and puts an `AbstractAction` in the action map. When the key fires, that action calls `listener.actionPerformed` with a new `ActionEvent`. The source is the bar (`FunctionKeyBar.this`). The command is the caption on that slot. The page never looks at the source. Calling `bindKey` again for the same key code replaces the action, so F1 sends `"B1"` after the swap and `"F1"` after the swap back.
 
 How you use it:
 
@@ -412,7 +421,14 @@ FunctionKeyBar footer = new FunctionKeyBar(64, 56, 40, functionListener);
 page.add(footer, BorderLayout.SOUTH);
 ```
 
-Change `64`, `56`, and `40` to match the other screen. The listener still branches on `"F1"`, `"F2"`, and so on. To add behaviour you edit the listener, not the bar.
+Change `64`, `56`, and `40` to match the other screen. The listener branches on the caption (`"F1"`, `"B1"`, `"F4"`). To add behaviour you edit the listener, not the bar. To swap the captions:
+
+```java
+footer.setLabels(secondLabels, FunctionKeyBar.SECOND_FACE);
+footer.setLabels(FunctionKeyBar.KEYS, FunctionKeyBar.FIRST_FACE);
+```
+
+Keep a `"F4"` in the same slot of both arrays when that key is what switches back.
 
 ### `page.WeaponConfigurationPanel` — the form
 
@@ -768,7 +784,7 @@ These are objects the screen creates from JDK classes, without a new `.java` fil
 | The body panel | `FunctionPage` | Transparent. Blue area in `CENTER`, form in `EAST`. |
 | `resultLabel` | `FunctionPage` | Dialog 16 plain. Empty border 16 pixels. Shows the last action. |
 | The F-key row | `FunctionKeyBar` | Transparent flow of twelve buttons. |
-| Each F-key `JButton` | `FunctionKeyBar` | 56 by 40, pale blue `(186, 224, 248)`, black border. |
+| Each F-key `JButton` | `FunctionKeyBar` | 56 by 40, black border. Pale blue on the first set, light orange on the second set. |
 | Each key `AbstractAction` | `FunctionKeyBar.bindKey` | Turns that key into an `ActionEvent` for the shared listener. |
 | The title bar | `WeaponConfigurationPanel` | Dark bar, title on the west, × on the east. |
 | The title `JLabel` | title bar | White, `TITLE_FONT`. |
@@ -813,6 +829,13 @@ User presses F1
     functionListener
       create() on FunctionPage
         resultLabel shows "F1 called create()"
+
+User presses F4
+  onF4()
+    setLabels writes B1…B12 and the orange face
+    the F1 key now sends "B1"
+  F4 again
+    setLabels writes F1…F12 and the blue face
 ```
 
 `OptionGroup.getSelected` reads `JRadioButton.isSelected` and `getText`. `CheckGroup.getSelected` does the same with `JCheckBox`. `HintField.getValue` reads the `showingHint` flag before it trusts `getText`. `getParameter` reads the map, then `JTextField.getText`. `selected` reads `JComboBox.getSelectedItem`. `readForm` is the only method that performs all of those reads in one place.
@@ -860,7 +883,7 @@ FunctionKeyBar footer = new FunctionKeyBar(64, 56, 40, listener);
 add(footer, BorderLayout.SOUTH);
 ```
 
-The listener reads `event.getActionCommand()` and compares it to `"F1"`, `"F2"`, and the rest.
+The listener reads `event.getActionCommand()` and compares it to `"F1"`, `"B1"`, `"F4"`, and the rest. F4 calls `setLabels` to swap the twelve captions, and the next F4 swaps them back.
 
 **Build a matching control.**
 
@@ -904,6 +927,6 @@ stack.add(card);
 
 **Change the shared colours.** Edit the constants on `Mono`. `paint`, `field`, `combo`, `button`, `check`, and `radio` all read those constants.
 
-**Change what F1 does.** Edit `FunctionPage.create()`. The bar already delivers the click.
+**Change what F1 does.** Edit `FunctionPage.create()`. The bar already delivers the click. **Change what the second set does.** Edit `onB1` and the other `onB` methods. F4 already swaps the captions. Keep `"F4"` in slot 4 of both arrays.
 
 **Change what OK saves.** Edit the listener so it passes `readForm()` to the real save method. Edit `EngagementService.create` when this sample is the place that should keep the object.

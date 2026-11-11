@@ -4,7 +4,7 @@ This project is a practice screen you can copy into a larger Java 1.6 program.
 
 | File | Job |
 |---|---|
-| `src/main/java/page/FunctionKeyBar.java` | The footer. Draws the twelve buttons, F1 through F12. Does not decide what they do. |
+| `src/main/java/page/FunctionKeyBar.java` | The footer. Draws twelve buttons. F4 swaps them for a second set. Does not decide what they do. |
 | `src/main/java/page/FunctionPage.java` | The window. Owns the one listener and the functions (`create()` and the rest). |
 | `src/main/java/page/WeaponConfigurationPanel.java` | The Create Engagement form on the right. Built from the pieces in `page/form/`. |
 | `src/main/java/page/form/` | The reusable rows, sections, and option groups. |
@@ -24,6 +24,14 @@ FunctionPage.actionPerformed
         |
         v
 create()          (only F1 goes here)
+
+You press F4
+        |
+        v
+onF4()            swaps the twelve captions
+        |
+        v
+F4 again          puts the first captions back
 ```
 
 ---
@@ -90,7 +98,7 @@ The same string is used for three things:
 2. The action command the listener reads.
 3. The name used when a keyboard key fires.
 
-`public` so the screen can see the list. In this project the screen does not need to; the listener compares the strings `"F1"`, `"F2"`, and so on directly.
+`public` so the screen can see the list. `onF4` passes `KEYS` back into `setLabels` when it restores the first set. The listener compares the strings `"F1"`, `"F2"`, and so on directly.
 
 ### `KEY_CODES` — the real keyboard keys
 
@@ -166,58 +174,35 @@ This row is the only child of the footer. The footer stays one component from th
 for (int i = 0; i < KEYS.length; i++) {
 ```
 
-`i` starts at 0 and stops before 12. `KEYS.length` is 12. Each pass builds one button.
+`i` starts at 0 and stops before 12. `KEYS.length` is 12. Each pass builds one empty button and stores it in `buttons[i]`. The captions are applied afterwards by `setLabels`, so the same buttons can be rewritten when F4 is pressed.
 
 ```java
-String key = KEYS[i];
-JButton button = new JButton(key);
-```
-
-`KEYS[0]` is `"F1"`, so the first button’s text is F1. `new JButton(key)` creates the button and sets that text.
-
-```java
-button.setActionCommand(key);
-```
-
-This is the important line for the listener. The action command is a string stored on the button. When the button is clicked, Swing puts that string on the event. The listener reads it with `event.getActionCommand()`.
-
-The button text and the action command are both `"F1"`. They can be different. The listener must use the action command, not the visible text. In a large old program the button might display a word such as “Save” while the command is still `"F1"`.
-
-```java
+JButton button = new JButton();
 button.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
-```
-
-Asks the layout for a button of the width and height you passed in. `FlowLayout` respects preferred size, so the buttons stay small and the rest of the footer stays empty, as in the sketch.
-
-```java
-button.setBackground(new Color(186, 224, 248));
 button.setOpaque(true);
 button.setFocusPainted(false);
 button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-```
-
-Light-blue face, black border two pixels thick. `setFocusPainted(false)` turns off the extra rectangle Swing draws when a button has keyboard focus, so the black border stays the only outline.
-
-```java
 button.addActionListener(listener);
-```
-
-Registers the screen’s listener on this button. The same `listener` object is passed on every pass of the loop. That is the “one listener for all twelve buttons” rule. There is no second listener hiding inside the footer.
-
-```java
+buttons[i] = button;
 row.add(button);
-bindKey(KEY_CODES[i], key, listener);
 ```
 
-Puts the button into the row, then connects the matching physical key (F1 through F12) to the same listener.
+`setPreferredSize` asks the layout for a button of the width and height you passed in. `FlowLayout` respects preferred size, so the buttons stay small and the rest of the footer stays empty, as in the sketch.
+
+The border is a black line two pixels thick. `setFocusPainted(false)` turns off the extra rectangle Swing draws when a button has keyboard focus, so the black border stays the only outline.
+
+`addActionListener(listener)` registers the screen’s listener on this button. The same `listener` object is passed on every pass of the loop. That is the “one listener for all twelve buttons” rule. There is no second listener hiding inside the footer.
+
+The action command is not set in this loop. `setLabels` sets it, together with the caption and the face colour. The action command is a string stored on the button. When the button is clicked, Swing puts that string on the event. The listener reads it with `event.getActionCommand()`. In this sample the caption and the command are the same word, `"F1"` or `"B1"`. The listener must use the action command.
 
 After the loop:
 
 ```java
 add(row, BorderLayout.SOUTH);
+setLabels(KEYS, FIRST_FACE);
 ```
 
-Puts the finished row on the bottom of the footer.
+Puts the finished row on the bottom of the footer, then paints F1 through F12 in the light blue `FIRST_FACE`.
 
 ### The three size methods
 
@@ -244,16 +229,16 @@ public Dimension getPreferredSize() {
 A click and a keypress must end at the same listener. `bindKey` does that for one key.
 
 ```java
-private void bindKey(int keyCode, final String command, final ActionListener listener)
+private void bindKey(int keyCode, final String command)
 ```
 
-`final` on `command` and `listener` is required by Java 6. The anonymous class created a few lines later is allowed to read a local variable only when that variable is `final`. You will see `final` used this way throughout a Java 6 UI.
+`final` on `command` is required by Java 6. The anonymous class created a few lines later is allowed to read a local variable only when that variable is `final`. You will see `final` used this way throughout a Java 6 UI. `listener` is a field of the bar, so the action reads that field and does not need a `final` local.
 
 ```java
-String mapKey = "function-" + command;
+String mapKey = "function-" + keyCode;
 ```
 
-For F1 this string is `"function-F1"`. It is only a name inside Swing’s maps. It is not the action command. The action command stays `"F1"`.
+For the F1 key this string is `"function-"` plus the number `VK_F1`. It is only a name inside Swing’s maps. It is not the action command. The action command is the caption on that slot, `"F1"` in the first set and `"B1"` after F4 swaps the bar. The name is the key code, not the caption, so a second `bindKey` for the same physical key replaces the old action.
 
 ```java
 getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
@@ -281,11 +266,32 @@ listener.actionPerformed(new ActionEvent(
         command));
 ```
 
-This calls the screen’s listener directly, as if a button had been clicked. The third argument, `command`, becomes `event.getActionCommand()` on the screen. For the F1 key that is `"F1"`. For the F12 key that is `"F12"`.
+This calls the screen’s listener directly, as if a button had been clicked. The third argument, `command`, becomes `event.getActionCommand()` on the screen. For the F1 key that is `"F1"` while the first set is showing, and `"B1"` while the second set is showing. The F4 key stays `"F4"` in both sets.
 
 `FunctionKeyBar.this` is the footer object. A plain `this` inside the anonymous class would mean the action, not the footer. The screen’s listener does not look at the source. It looks at the command. Either way the call is safe.
 
 `AbstractAction` is a ready-made class that already implements the action method Swing expects. Writing `new AbstractAction() { public void actionPerformed(...) { ... } }` is the Java 6 way to make a one-off action. Java 8 would use a lambda here. This project does not, so the same code compiles on Java 6.
+
+### `setLabels` — a new set of buttons
+
+```java
+public void setLabels(String[] labels, Color face)
+```
+
+The twelve buttons already exist. This method does not build new ones. For each slot it sets the caption, the action command, and the face colour, then calls `bindKey` again so the physical key sends the new command.
+
+`labels` must have twelve strings, in slot order. Slot 0 is the left button and the F1 key. Slot 3 is the fourth button and the F4 key.
+
+`FunctionPage` calls it from `onF4`:
+
+| Press | Captions | Face |
+|---|---|---|
+| First F4 | `B1 B2 B3 F4 B5 B6 B7 B8 B9 B10 B11 B12` | `SECOND_FACE`, a light orange |
+| F4 again | `KEYS`, which is `F1` through `F12` | `FIRST_FACE`, the original light blue |
+
+The fourth caption stays `"F4"` in both arrays. That is why the second press still arrives as `"F4"` and can switch back. The other eleven captions change, and each new caption is a different method: `onB1`, `onB2`, and so on.
+
+`revalidate()` and `repaint()` run after the loop so the new words are drawn immediately.
 
 ---
 
@@ -311,12 +317,14 @@ In the real project this label goes away. Those methods will call the real creat
 private final ActionListener functionListener = new ActionListener() {
     public void actionPerformed(ActionEvent event) {
         String key = event.getActionCommand();
-        if ("F1".equals(key)) {
+        if ("F4".equals(key)) {
+            onF4();
+        } else if ("F1".equals(key)) {
             create();
-        } else if ("F2".equals(key)) {
-            onF2();
+        } else if ("B1".equals(key)) {
+            onB1();
         }
-        // ... F3 through F12
+        // ... the rest of F2–F12 and B2–B12
     }
 };
 ```
@@ -325,7 +333,7 @@ private final ActionListener functionListener = new ActionListener() {
 
 This block is an anonymous class: a class with no name, created on the spot, that implements `ActionListener`. Java 6 uses this anywhere a listener is needed. In the other codebase, search for `new ActionListener()` and for `actionPerformed`.
 
-`event.getActionCommand()` returns the string that was set with `setActionCommand`. For the F1 button and the F1 key, that string is `"F1"`.
+`event.getActionCommand()` returns the string that was set with `setActionCommand`. For the F1 button and the F1 key, that string is `"F1"` on the first set and `"B1"` on the second set. F4 is checked first, because that command exists in both sets and its job is to swap the bar rather than run a second-set method.
 
 The test is written `"F1".equals(key)` rather than `key.equals("F1")`. If `key` were ever null, `key.equals(...)` would throw a `NullPointerException`. The constant is on the left, so a null command simply makes the test false and the chain continues. Old Java code uses this order a lot.
 
@@ -364,11 +372,13 @@ page.add(resultLabel, BorderLayout.NORTH);
 `BorderLayout.NORTH` puts the label at the top of the page.
 
 ```java
-FunctionKeyBar footer = new FunctionKeyBar(64, 56, 40, functionListener);
+footer = new FunctionKeyBar(64, 56, 40, functionListener);
 page.add(footer, BorderLayout.SOUTH);
 ```
 
-This is the line you copy into an existing screen.
+`footer` is a field, not a local. `onF4` has to call `footer.setLabels` later, and a local would be gone when the constructor finished.
+
+This is the line you copy into an existing screen. Keep the bar in a field when F4 should swap the captions.
 
 * `64` — footer height.
 * `56` — button width.
@@ -402,9 +412,32 @@ private void create() {
 
 F1 is the only key with a real name in this sample, because that is the function you asked for. The body is a stand-in. In the other project, replace the `setText` line with the call that already exists there, for example the method that opens the create form.
 
-`onF2` through `onF12` are the same shape. They exist so each key already has a method to fill in. `private` means only this screen calls them. The listener is the only caller.
+`onF2` through `onF12` are the same shape, except `onF4`. They exist so each key already has a method to fill in. `private` means only this screen calls them. The listener is the only caller.
 
-`onF10`, `onF11`, and `onF12` match the buttons labelled F10, F11, and F12, and the physical keys of the same name.
+`onF10`, `onF11`, and `onF12` match the buttons labelled F10, F11, and F12, and the physical keys of the same name, while the first set is showing.
+
+### `onF4` — swap the bar, then swap it back
+
+```java
+private void onF4() {
+    secondSet = !secondSet;
+    if (secondSet) {
+        footer.setLabels(SECOND_KEYS, FunctionKeyBar.SECOND_FACE);
+        resultLabel.setText("F4 second set");
+    } else {
+        footer.setLabels(FunctionKeyBar.KEYS, FunctionKeyBar.FIRST_FACE);
+        resultLabel.setText("F4 first set");
+    }
+}
+```
+
+`secondSet` starts false. The first F4 makes it true and shows the B captions in orange. The next F4 makes it false and restores F1 through F12 in blue. Each later F4 flips it again.
+
+`SECOND_KEYS` is the twelve captions of the second set. Index 3 is `"F4"`. The other indexes are `"B1"`, `"B2"`, `"B3"`, `"B5"`, and on through `"B12"`. There is no `"B4"`. That slot is the swap in both sets.
+
+`onB1` through `onB12` (with no `onB4`) are the new operations. In this sample each one writes its own name on the blue label, so you can see that B1 is not F1. Replace those bodies with the real second-set work.
+
+The physical keys follow the captions. While the second set is showing, the F1 key sends `"B1"` and lands in `onB1`. The F4 key still sends `"F4"`.
 
 ### `main`
 
@@ -473,8 +506,8 @@ Using F1 as the example.
 
 1. `FunctionPage` creates one `ActionListener` and stores it in `functionListener`.
 2. The constructor calls `new FunctionKeyBar(64, 56, 40, functionListener)`.
-3. The loop reaches `i == 0`. `key` is `"F1"`.
-4. The new button gets text `"F1"`, action command `"F1"`, and `addActionListener(functionListener)`.
+3. The loop reaches `i == 0` and stores an empty button in `buttons[0]`, with `addActionListener(functionListener)`.
+4. `setLabels(KEYS, FIRST_FACE)` sets that button’s text and action command to `"F1"`.
 5. `bindKey` maps the physical F1 key to an action that calls `functionListener.actionPerformed` with command `"F1"`.
 6. You click the button, or you press F1.
 7. Swing calls `actionPerformed` on that one listener.
@@ -482,7 +515,15 @@ Using F1 as the example.
 9. `"F1".equals(key)` is true, so the listener calls `create()`.
 10. `create()` sets the label to `F1 called create()`.
 
-F2 through F12 follow the same steps and land in `onF2` through `onF12`. The F12 button and the F12 key both arrive with command `"F12"` and land in `onF12`.
+F2 through F12 follow the same steps and land in `onF2` through `onF12`, except F4, which lands in `onF4` and swaps the captions. The F12 button and the F12 key both arrive with command `"F12"` and land in `onF12` while the first set is showing.
+
+F4, then a click on the button that now says B1:
+
+1. The first F4 runs `onF4`. `setLabels` writes `B1` on the left button and rebinds the physical F1 key to the command `"B1"`.
+2. You click that button, or you press F1.
+3. `getActionCommand()` returns `"B1"`.
+4. The listener calls `onB1()`.
+5. A second F4 runs `onF4` again and restores `"F1"` on that same button.
 
 ---
 

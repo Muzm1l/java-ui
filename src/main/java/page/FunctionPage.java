@@ -16,9 +16,10 @@ import page.backend.EngagementService;
 import page.model.Engagement;
 
 /**
- * The screen. One listener handles all twelve footer buttons.
- * F1 calls create(). The other methods are empty on purpose:
- * fill those in with the functions from the real project.
+ * The screen. One listener handles every footer button.
+ * F1 calls create(). F4 swaps the footer to a second set of buttons.
+ * A second F4 restores the first set. The other methods are empty
+ * on purpose: fill those in with the functions from the real project.
  *
  * To drop this into an existing window, copy the listener and the
  * create() method, then add the bar with BorderLayout.SOUTH.
@@ -27,7 +28,14 @@ public class FunctionPage extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
+    /** Second set. Slot 4 stays "F4" so the same key can switch back. */
+    private static final String[] SECOND_KEYS = {
+        "B1", "B2", "B3", "F4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12"
+    };
+
     private final JLabel resultLabel = new JLabel(" ");
+    private FunctionKeyBar footer;
+    private boolean secondSet;
 
     /**
      * One listener for every function button.
@@ -37,14 +45,14 @@ public class FunctionPage extends JFrame {
         public void actionPerformed(ActionEvent event) {
             String key = event.getActionCommand();
 
-            if ("F1".equals(key)) {
+            if ("F4".equals(key)) {
+                onF4();
+            } else if ("F1".equals(key)) {
                 create();
             } else if ("F2".equals(key)) {
                 onF2();
             } else if ("F3".equals(key)) {
                 onF3();
-            } else if ("F4".equals(key)) {
-                onF4();
             } else if ("F5".equals(key)) {
                 onF5();
             } else if ("F6".equals(key)) {
@@ -61,6 +69,28 @@ public class FunctionPage extends JFrame {
                 onF11();
             } else if ("F12".equals(key)) {
                 onF12();
+            } else if ("B1".equals(key)) {
+                onB1();
+            } else if ("B2".equals(key)) {
+                onB2();
+            } else if ("B3".equals(key)) {
+                onB3();
+            } else if ("B5".equals(key)) {
+                onB5();
+            } else if ("B6".equals(key)) {
+                onB6();
+            } else if ("B7".equals(key)) {
+                onB7();
+            } else if ("B8".equals(key)) {
+                onB8();
+            } else if ("B9".equals(key)) {
+                onB9();
+            } else if ("B10".equals(key)) {
+                onB10();
+            } else if ("B11".equals(key)) {
+                onB11();
+            } else if ("B12".equals(key)) {
+                onB12();
             }
         }
     };
@@ -101,7 +131,7 @@ public class FunctionPage extends JFrame {
         page.add(body, BorderLayout.CENTER);
 
         /* bar height, button width, button height — change these to fit the other screen */
-        FunctionKeyBar footer = new FunctionKeyBar(64, 56, 40, functionListener);
+        footer = new FunctionKeyBar(64, 56, 40, functionListener);
         page.add(footer, BorderLayout.SOUTH);
 
         setContentPane(page);
@@ -125,9 +155,20 @@ public class FunctionPage extends JFrame {
         resultLabel.setText("F3");
     }
 
-    /** F4. */
+    /**
+     * F4 swaps the footer.
+     * The first press shows B1–B12 (the fourth button stays F4).
+     * The next press restores F1–F12.
+     */
     private void onF4() {
-        resultLabel.setText("F4");
+        secondSet = !secondSet;
+        if (secondSet) {
+            footer.setLabels(SECOND_KEYS, FunctionKeyBar.SECOND_FACE);
+            resultLabel.setText("F4 second set");
+        } else {
+            footer.setLabels(FunctionKeyBar.KEYS, FunctionKeyBar.FIRST_FACE);
+            resultLabel.setText("F4 first set");
+        }
     }
 
     /** F5. */
@@ -168,6 +209,61 @@ public class FunctionPage extends JFrame {
     /** F12. */
     private void onF12() {
         resultLabel.setText("F12");
+    }
+
+    /** B1. Second-set operation for the first slot. */
+    private void onB1() {
+        resultLabel.setText("B1");
+    }
+
+    /** B2. */
+    private void onB2() {
+        resultLabel.setText("B2");
+    }
+
+    /** B3. */
+    private void onB3() {
+        resultLabel.setText("B3");
+    }
+
+    /** B5. Slot 4 is F4, the swap, in both sets. */
+    private void onB5() {
+        resultLabel.setText("B5");
+    }
+
+    /** B6. */
+    private void onB6() {
+        resultLabel.setText("B6");
+    }
+
+    /** B7. */
+    private void onB7() {
+        resultLabel.setText("B7");
+    }
+
+    /** B8. */
+    private void onB8() {
+        resultLabel.setText("B8");
+    }
+
+    /** B9. */
+    private void onB9() {
+        resultLabel.setText("B9");
+    }
+
+    /** B10. */
+    private void onB10() {
+        resultLabel.setText("B10");
+    }
+
+    /** B11. */
+    private void onB11() {
+        resultLabel.setText("B11");
+    }
+
+    /** B12. */
+    private void onB12() {
+        resultLabel.setText("B12");
     }
 
     public static void main(String[] args) {

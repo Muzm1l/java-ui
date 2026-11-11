@@ -16,10 +16,11 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
 /**
- * Footer of twelve function buttons: F1 through F12.
+ * Footer of twelve function buttons.
  *
  * This class only draws the bar. It does not decide what the keys do.
  * Pass in the one listener from the screen that owns the functions.
+ * setLabels replaces the twelve captions. The physical F1–F12 keys follow.
  * Change the package line when you paste this into the other project.
  */
 public class FunctionKeyBar extends JPanel {
@@ -45,7 +46,15 @@ public class FunctionKeyBar extends JPanel {
         KeyEvent.VK_F12
     };
 
+    /** Face colour of the first set, F1 through F12. */
+    public static final Color FIRST_FACE = new Color(186, 224, 248);
+
+    /** Face colour of the second set, so the swap is visible. */
+    public static final Color SECOND_FACE = new Color(255, 214, 153);
+
     private final int barHeight;
+    private final ActionListener listener;
+    private final JButton[] buttons = new JButton[KEYS.length];
 
     /**
      * @param barHeight    height of the whole footer, in pixels
@@ -55,6 +64,7 @@ public class FunctionKeyBar extends JPanel {
      */
     public FunctionKeyBar(int barHeight, int buttonWidth, int buttonHeight, ActionListener listener) {
         this.barHeight = barHeight;
+        this.listener = listener;
         setLayout(new BorderLayout());
         setBackground(new Color(168, 214, 245));
         setOpaque(true);
@@ -63,20 +73,35 @@ public class FunctionKeyBar extends JPanel {
         row.setOpaque(false);
 
         for (int i = 0; i < KEYS.length; i++) {
-            String key = KEYS[i];
-            JButton button = new JButton(key);
-            button.setActionCommand(key);
+            JButton button = new JButton();
             button.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
-            button.setBackground(new Color(186, 224, 248));
             button.setOpaque(true);
             button.setFocusPainted(false);
             button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
             button.addActionListener(listener);
+            buttons[i] = button;
             row.add(button);
-            bindKey(KEY_CODES[i], key, listener);
         }
 
         add(row, BorderLayout.SOUTH);
+        setLabels(KEYS, FIRST_FACE);
+    }
+
+    /**
+     * Replace the twelve captions and the command each button sends.
+     * The physical F1–F12 keys follow the new commands.
+     * labels must contain twelve strings, one per slot.
+     */
+    public void setLabels(String[] labels, Color face) {
+        for (int i = 0; i < buttons.length; i++) {
+            String label = labels[i];
+            buttons[i].setText(label);
+            buttons[i].setActionCommand(label);
+            buttons[i].setBackground(face);
+            bindKey(KEY_CODES[i], label);
+        }
+        revalidate();
+        repaint();
     }
 
     public Dimension getPreferredSize() {
@@ -97,10 +122,11 @@ public class FunctionKeyBar extends JPanel {
 
     /**
      * Pressing the real function key fires the same listener as a click.
-     * The action command is still "F1", "F2", ... so the screen has one path.
+     * The command is whatever caption is on that slot right now.
+     * The map name is the key code, so a later setLabels call replaces the old action.
      */
-    private void bindKey(int keyCode, final String command, final ActionListener listener) {
-        String mapKey = "function-" + command;
+    private void bindKey(int keyCode, final String command) {
+        String mapKey = "function-" + keyCode;
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(keyCode, 0), mapKey);
         getActionMap().put(mapKey, new AbstractAction() {
