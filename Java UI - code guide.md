@@ -6,7 +6,8 @@ This project is a practice screen you can copy into a larger Java 1.6 program.
 |---|---|
 | `src/main/java/page/FunctionKeyBar.java` | The footer. Draws twelve buttons. F4 swaps them for a second set. Does not decide what they do. |
 | `src/main/java/page/FunctionPage.java` | The window. Owns the one listener and the functions (`create()` and the rest). |
-| `src/main/java/page/WeaponConfigurationPanel.java` | The Create Engagement form on the right. Built from the pieces in `page/form/`. |
+| `src/main/java/page/EngagementParametersPanel.java` | The screen shown when the window opens. Engagement Parameters, with the four attack drop-downs. |
+| `src/main/java/page/WeaponConfigurationPanel.java` | The older Create Engagement practice form. It is not the screen that opens. |
 | `src/main/java/page/form/` | The reusable rows, sections, and option groups. |
 | `pom.xml` | Tells Maven to compile this as Java 1.6 and which class to start. |
 | `.gitignore` | Tells git which generated files to leave out of the repository. |
@@ -130,12 +131,12 @@ The screen tells the footer how tall it should be. `final` means the constructor
 public FunctionKeyBar(int barHeight, int buttonWidth, int buttonHeight, ActionListener listener)
 ```
 
-This runs when the screen writes `new FunctionKeyBar(64, 56, 40, functionListener)`.
+This runs when the screen writes `new FunctionKeyBar(64, 96, 40, functionListener)`.
 
 | Argument | In the sample | Meaning |
 |---|---|---|
 | `barHeight` | `64` | Height of the whole footer strip, in pixels. |
-| `buttonWidth` | `56` | Width of each button. |
+| `buttonWidth` | `96` | Width of each button. Wide enough for the blue key square and the words beside it. |
 | `buttonHeight` | `40` | Height of each button. |
 | `listener` | `functionListener` | The one listener from the screen. Every button receives this same object. |
 
@@ -158,13 +159,13 @@ A layout manager places children inside a panel. `BorderLayout` has five regions
 #### The inner row
 
 ```java
-JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+JPanel row = new JPanel(new GridLayout(1, KEYS.length, 4, 0));
 row.setOpaque(false);
 ```
 
-A second panel holds the buttons in one horizontal line. `FlowLayout.LEFT` starts at the left. The two `4`s are the horizontal gap and the vertical gap, in pixels, between buttons and around the row.
+A second panel holds the twelve buttons in one horizontal line. `GridLayout` gives every button the same width and keeps them on one row, so a long label does not wrap onto a second line. The `4` is the gap, in pixels, between buttons.
 
-`setOpaque(false)` makes this row transparent, so the footer’s blue shows through the gaps. The buttons themselves are still painted.
+`setOpaque(false)` makes this row transparent, so the footer’s blue shows through the gaps. The buttons themselves are black.
 
 This row is the only child of the footer. The footer stays one component from the screen’s point of view: the screen adds `FunctionKeyBar`, and never sees `row`.
 
@@ -174,35 +175,28 @@ This row is the only child of the footer. The footer stays one component from th
 for (int i = 0; i < KEYS.length; i++) {
 ```
 
-`i` starts at 0 and stops before 12. `KEYS.length` is 12. Each pass builds one empty button and stores it in `buttons[i]`. The captions are applied afterwards by `setLabels`, so the same buttons can be rewritten when F4 is pressed.
+`i` starts at 0 and stops before 12. `KEYS.length` is 12. Each pass builds one black button and stores it in `buttons[i]`. The blue square is painted with `KEYS[i]` (`"F1"` on the first button) and does not change. The words beside the square are applied by `setLabels`, so F4 can rewrite them.
 
-```java
-JButton button = new JButton();
-button.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
-button.setOpaque(true);
-button.setFocusPainted(false);
-button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-button.addActionListener(listener);
-buttons[i] = button;
-row.add(button);
+Each button is a `KeyButton`, a small black panel, not a `JButton`. A look and feel will repaint a `JButton` in its own colours. A panel paints the black we set.
+
+```text
++------------------+
+| [F1]  Create     |
++------------------+
 ```
 
-`setPreferredSize` asks the layout for a button of the width and height you passed in. `FlowLayout` respects preferred size, so the buttons stay small and the rest of the footer stays empty, as in the sketch.
+`[F1]` is a `JLabel` about 28 by 22 pixels, background `KEY_BLUE` `(47, 128, 237)`, white bold text. It sits on the left, vertically centred. `Create` is a second `JLabel`, white, on the rest of the black button.
 
-The border is a black line two pixels thick. `setFocusPainted(false)` turns off the extra rectangle Swing draws when a button has keyboard focus, so the black border stays the only outline.
-
-`addActionListener(listener)` registers the screen’s listener on this button. The same `listener` object is passed on every pass of the loop. That is the “one listener for all twelve buttons” rule. There is no second listener hiding inside the footer.
-
-The action command is not set in this loop. `setLabels` sets it, together with the caption and the face colour. The action command is a string stored on the button. When the button is clicked, Swing puts that string on the event. The listener reads it with `event.getActionCommand()`. In this sample the caption and the command are the same word, `"F1"` or `"B1"`. The listener must use the action command.
+A click on the square, the words, or the black area all call the same listener. The labels would otherwise swallow the click. The command they send is not the word on the button. `setLabels` stores that command separately. On the first set the F1 button shows `Create` and sends `"F1"`. After F4 it shows `Alt 1` and sends `"B1"`. The listener must use the action command.
 
 After the loop:
 
 ```java
 add(row, BorderLayout.SOUTH);
-setLabels(KEYS, FIRST_FACE);
+setLabels(KEYS, KEYS);
 ```
 
-Puts the finished row on the bottom of the footer, then paints F1 through F12 in the light blue `FIRST_FACE`.
+Puts the finished row on the bottom of the footer. The constructor’s `setLabels` uses the key names as placeholder words. `FunctionPage` immediately replaces those words with `FIRST_TEXT` (`Create`, `Op 2`, `Swap`, and the rest).
 
 ### The three size methods
 
@@ -238,7 +232,7 @@ private void bindKey(int keyCode, final String command)
 String mapKey = "function-" + keyCode;
 ```
 
-For the F1 key this string is `"function-"` plus the number `VK_F1`. It is only a name inside Swing’s maps. It is not the action command. The action command is the caption on that slot, `"F1"` in the first set and `"B1"` after F4 swaps the bar. The name is the key code, not the caption, so a second `bindKey` for the same physical key replaces the old action.
+For the F1 key this string is `"function-"` plus the number `VK_F1`. It is only a name inside Swing’s maps. It is not the action command. The action command is the string `setLabels` stored for that slot, `"F1"` in the first set and `"B1"` after F4 swaps the words. The blue square still says `F1`. The name in the map is the key code, not the command, so a second `bindKey` for the same physical key replaces the old action.
 
 ```java
 getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
@@ -272,24 +266,24 @@ This calls the screen’s listener directly, as if a button had been clicked. Th
 
 `AbstractAction` is a ready-made class that already implements the action method Swing expects. Writing `new AbstractAction() { public void actionPerformed(...) { ... } }` is the Java 6 way to make a one-off action. Java 8 would use a lambda here. This project does not, so the same code compiles on Java 6.
 
-### `setLabels` — a new set of buttons
+### `setLabels` — a new set of words
 
 ```java
-public void setLabels(String[] labels, Color face)
+public void setLabels(String[] commands, String[] texts)
 ```
 
-The twelve buttons already exist. This method does not build new ones. For each slot it sets the caption, the action command, and the face colour, then calls `bindKey` again so the physical key sends the new command.
+The twelve buttons already exist. This method does not build new ones. For each slot it sets the words beside the blue square, stores the command, and calls `bindKey` again so the physical key sends that command. The square’s text stays `"F1"` through `"F12"`. The button stays black.
 
-`labels` must have twelve strings, in slot order. Slot 0 is the left button and the F1 key. Slot 3 is the fourth button and the F4 key.
+Both arrays must have twelve strings, in slot order. Slot 0 is the left button and the F1 key. Slot 3 is the fourth button and the F4 key. `commands[i]` is what the listener reads. `texts[i]` is what the user reads beside the square.
 
 `FunctionPage` calls it from `onF4`:
 
-| Press | Captions | Face |
-|---|---|---|
-| First F4 | `B1 B2 B3 F4 B5 B6 B7 B8 B9 B10 B11 B12` | `SECOND_FACE`, a light orange |
-| F4 again | `KEYS`, which is `F1` through `F12` | `FIRST_FACE`, the original light blue |
+| Press | Blue square | Words | Command |
+|---|---|---|---|
+| First F4 | still `F1` … `F12` | `Alt 1` … `Swap` … `Alt 12` | `B1` … `F4` … `B12` |
+| F4 again | still `F1` … `F12` | `Create`, `Op 2`, `Swap`, … | `F1` … `F4` … `F12` |
 
-The fourth caption stays `"F4"` in both arrays. That is why the second press still arrives as `"F4"` and can switch back. The other eleven captions change, and each new caption is a different method: `onB1`, `onB2`, and so on.
+The fourth command stays `"F4"` in both arrays. That is why the second press still arrives as `"F4"` and can switch back. The fourth word stays `Swap`. The other eleven words change, and each new command is a different method: `onB1`, `onB2`, and so on.
 
 `revalidate()` and `repaint()` run after the loop so the new words are drawn immediately.
 
@@ -372,7 +366,8 @@ page.add(resultLabel, BorderLayout.NORTH);
 `BorderLayout.NORTH` puts the label at the top of the page.
 
 ```java
-footer = new FunctionKeyBar(64, 56, 40, functionListener);
+footer = new FunctionKeyBar(64, 96, 40, functionListener);
+footer.setLabels(FunctionKeyBar.KEYS, FIRST_TEXT);
 page.add(footer, BorderLayout.SOUTH);
 ```
 
@@ -381,7 +376,7 @@ page.add(footer, BorderLayout.SOUTH);
 This is the line you copy into an existing screen. Keep the bar in a field when F4 should swap the captions.
 
 * `64` — footer height.
-* `56` — button width.
+* `96` — button width. The blue square and the operation words need more than a bare `F1`.
 * `40` — button height.
 * `functionListener` — the one listener declared above.
 * `BorderLayout.SOUTH` — the footer stays at the bottom while the rest of the page occupies the center.
@@ -422,18 +417,18 @@ F1 is the only key with a real name in this sample, because that is the function
 private void onF4() {
     secondSet = !secondSet;
     if (secondSet) {
-        footer.setLabels(SECOND_KEYS, FunctionKeyBar.SECOND_FACE);
+        footer.setLabels(SECOND_KEYS, SECOND_TEXT);
         resultLabel.setText("F4 second set");
     } else {
-        footer.setLabels(FunctionKeyBar.KEYS, FunctionKeyBar.FIRST_FACE);
+        footer.setLabels(FunctionKeyBar.KEYS, FIRST_TEXT);
         resultLabel.setText("F4 first set");
     }
 }
 ```
 
-`secondSet` starts false. The first F4 makes it true and shows the B captions in orange. The next F4 makes it false and restores F1 through F12 in blue. Each later F4 flips it again.
+`secondSet` starts false. The first F4 makes it true and replaces the words with `Alt 1`, `Alt 2`, and the rest. The blue squares stay `F1` through `F12`, and the buttons stay black. The next F4 restores `Create`, `Op 2`, and the rest. Each later F4 flips the words again.
 
-`SECOND_KEYS` is the twelve captions of the second set. Index 3 is `"F4"`. The other indexes are `"B1"`, `"B2"`, `"B3"`, `"B5"`, and on through `"B12"`. There is no `"B4"`. That slot is the swap in both sets.
+`SECOND_KEYS` is the twelve commands of the second set, not the words on the buttons. Index 3 is `"F4"`. The other indexes are `"B1"`, `"B2"`, `"B3"`, `"B5"`, and on through `"B12"`. There is no `"B4"`. That slot is the swap in both sets. `SECOND_TEXT` is the words: `Alt 1` beside the F1 square, `Swap` beside the F4 square, and so on.
 
 `onB1` through `onB12` (with no `onB4`) are the new operations. In this sample each one writes its own name on the blue label, so you can see that B1 is not F1. Replace those bodies with the real second-set work.
 
@@ -505,9 +500,9 @@ If this folder is not a git repository yet, the ignore file does nothing until y
 Using F1 as the example.
 
 1. `FunctionPage` creates one `ActionListener` and stores it in `functionListener`.
-2. The constructor calls `new FunctionKeyBar(64, 56, 40, functionListener)`.
-3. The loop reaches `i == 0` and stores an empty button in `buttons[0]`, with `addActionListener(functionListener)`.
-4. `setLabels(KEYS, FIRST_FACE)` sets that button’s text and action command to `"F1"`.
+2. The constructor calls `new FunctionKeyBar(64, 96, 40, functionListener)`.
+3. The loop reaches `i == 0` and builds a black button whose blue square says `"F1"`.
+4. `FunctionPage` calls `setLabels(KEYS, FIRST_TEXT)`. The words become `Create` and the command stays `"F1"`.
 5. `bindKey` maps the physical F1 key to an action that calls `functionListener.actionPerformed` with command `"F1"`.
 6. You click the button, or you press F1.
 7. Swing calls `actionPerformed` on that one listener.
@@ -519,7 +514,7 @@ F2 through F12 follow the same steps and land in `onF2` through `onF12`, except 
 
 F4, then a click on the button that now says B1:
 
-1. The first F4 runs `onF4`. `setLabels` writes `B1` on the left button and rebinds the physical F1 key to the command `"B1"`.
+1. The first F4 runs `onF4`. `setLabels` writes `Alt 1` beside the F1 square and rebinds the physical F1 key to the command `"B1"`.
 2. You click that button, or you press F1.
 3. `getActionCommand()` returns `"B1"`.
 4. The listener calls `onB1()`.
@@ -535,7 +530,7 @@ F4, then a click on the button that now says B1:
 4. In that window’s constructor, after the other panels are added:
 
 ```java
-FunctionKeyBar footer = new FunctionKeyBar(64, 56, 40, functionListener);
+FunctionKeyBar footer = new FunctionKeyBar(64, 96, 40, functionListener);
 add(footer, BorderLayout.SOUTH);
 ```
 
@@ -557,7 +552,9 @@ Words worth searching in that codebase:
 
 ## 6. Run this sample
 
-From a terminal:
+On a Linux machine that has Java but cannot compile, skip Maven. The built program is `run/java-ui.jar`. How to start it is in `Run on Linux.md`.
+
+From a terminal on a machine that can compile:
 
 ```bash
 cd ~/java/java-ui
@@ -565,9 +562,11 @@ mvn -q package
 $JAVA6_HOME/bin/java -jar target/java-ui-1.0.jar
 ```
 
-Click **F1** or press the F1 key. The label on the blue page reads `F1 called create()`. The other buttons report their own names. F10, F11, and F12 do the same for those keys.
+When the window opens, the screen is Engagement Parameters. Acoustic head mode, Attack mode, Wake Sensor, and Guidance Mode are drop-downs. Their lists are Passive / Simultaneous / Wake, Sub Surface / Surface, OFF / ON, and Bg Rider Out / CCM / TCCM.
 
-The dark form on the right is Create Engagement. The bottom **OK** copies every field into an `Engagement` and passes that object to `EngagementService.create`. **Cancel** does not. The **×** hides the form. How that hand-off works is in `Create Engagement - how values reach the backend.md`.
+Click **F1** or press the F1 key. The blue strip shows those four drop-down values. The screen stays Engagement Parameters. The other buttons report their own names. F10, F11, and F12 do the same for those keys.
+
+`WeaponConfigurationPanel` is still the older practice form. Its bottom **OK** copies every field into an `Engagement`. That form is not what opens at start. How that hand-off works is in `Create Engagement - how values reach the backend.md`.
 
 ---
 
@@ -578,21 +577,16 @@ The form is not one long class full of layout code. It is a screen assembled fro
 ```text
 FunctionPage
     |
-    +-- blue page, left
+    +-- blue strip, top                         the last key that was pressed
     |
-    +-- WeaponConfigurationPanel, right     BorderLayout.EAST
+    +-- EngagementParametersPanel, center       shown when the window opens
             |
-            +-- title "Create Engagement" and the close mark
-            +-- FormStack          vertical pile, scrolls
-            |       |
-            |       +-- FormRow         label + one control
-            |       +-- Heading         cyan section title
-            |       +-- FormCard        bordered group
-            |               |
-            |               +-- GroupLabel    title with a line on each side
-            |               +-- OptionGroup   radio buttons, one choice
-            |               +-- CheckGroup    check boxes, any number ticked
-            +-- Cancel and OK, fixed along the bottom
+            +-- ENGAGEMENT PARAMETERS
+            +-- WEAPON CONFIGURATION
+            +-- PARAMETER CONFIGURATION
+            |       drop-downs: Acoustic head mode, Attack mode,
+            |       Wake Sensor, Guidance Mode
+            +-- TARGET PARAMETERS
 ```
 
 To make a similar screen, copy `WeaponConfigurationPanel`, change the title, and add your own rows and sections. You do not copy layout code into `FunctionPage`.
@@ -602,14 +596,11 @@ To make a similar screen, copy `WeaponConfigurationPanel`, change the title, and
 In `FunctionPage` the window has two regions above the footer:
 
 ```java
-JPanel body = new JPanel(new BorderLayout());
-body.add(blue, BorderLayout.CENTER);
-body.add(form, BorderLayout.EAST);
+page.add(blue, BorderLayout.NORTH);
+page.add(parameters, BorderLayout.CENTER);
 ```
 
-`CENTER` is the blue page. `EAST` is the form. The footer stays `SOUTH` of the whole window, so the function keys still run along the bottom.
-
-`form` is `final` because the OK and Cancel listeners are anonymous classes, and Java 6 only lets an anonymous class read a local variable when that variable is `final`.
+`parameters` is an `EngagementParametersPanel`. It is already on screen when the window opens. F1 does not replace it. The footer stays `SOUTH`.
 
 ### `Mono` — the shared look
 

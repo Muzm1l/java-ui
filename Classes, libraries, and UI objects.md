@@ -25,7 +25,8 @@ Java itself
 This project
     page.FunctionPage                  the window
     page.FunctionKeyBar                the F1–F12 footer
-    page.WeaponConfigurationPanel      the Create Engagement form
+    page.EngagementParametersPanel     the screen shown when the window opens
+    page.WeaponConfigurationPanel      the older Create Engagement practice form
     page.model.Engagement              the values after they leave the form
     page.backend.EngagementService     the method that receives those values
     page.form.*                        the rows, cards, colours, and hints
@@ -74,14 +75,9 @@ Swing draws a tree of components. A component is a rectangle. A container is a c
 ```text
 FunctionPage                         a JFrame, the operating-system window
 └─ page                              a JPanel, BorderLayout, light blue
-   ├─ CENTER  body                   a JPanel, BorderLayout, transparent
-   │  ├─ CENTER  blue                a JPanel, the empty blue area
-   │  │  └─ NORTH  resultLabel       a JLabel, "Saved …" after OK
-   │  └─ EAST  WeaponConfigurationPanel
-   │     ├─ NORTH  title bar         "Create Engagement" and the ×
-   │     ├─ CENTER JScrollPane
-   │     │  └─ FormStack             the rows, headings, and cards
-   │     └─ SOUTH  button bar        Cancel and the cyan OK
+   ├─ NORTH   resultLabel            the last key that was pressed
+   ├─ CENTER  EngagementParametersPanel
+   │     the screen at open: cyan section bars, fields, and four drop-downs
    └─ SOUTH  FunctionKeyBar          F1 through F12
       └─ SOUTH  row                  twelve JButtons in a FlowLayout
 ```
@@ -174,7 +170,7 @@ The window uses it for “form on the right, footer on the bottom, blue area in 
 
 **`FlowLayout`** places children left to right in one row, at their preferred size. When the row is full, it wraps. It does not stretch children.
 
-`new FlowLayout(FlowLayout.LEFT, 4, 4)` aligns left, with 4 pixels between buttons and 4 pixels above and below. That is the F-key row. `FlowLayout.RIGHT` is the Cancel / OK bar. `FlowLayout.CENTER` is the Field 3 line.
+`new FlowLayout(FlowLayout.RIGHT, 8, 8)` is the Cancel / OK bar. `FlowLayout.CENTER` is the Field 3 line. The F-key row uses `GridLayout` instead, one row of twelve equal black buttons.
 
 **`GridLayout`** makes a grid of equal cells. Every radio button in a group is the same size, which is what makes Choice 1 line up under Choice 5.
 
@@ -368,7 +364,8 @@ One object of this class is the sample window. It owns the blue page, the form, 
 | `secondSet` | False on the first set (F1–F12). True after F4, until F4 is pressed again. |
 | `SECOND_KEYS` | The twelve captions of the second set: B1, B2, B3, F4, B5 through B12. |
 | `FunctionPage()` | Builds the tree, wires OK and Cancel, sizes the window, centres it. |
-| `create()` | F1. In this sample it only changes the label. In the other project this is where that key’s real work goes. |
+| `parameters` | `EngagementParametersPanel`. It fills the window when the program starts. |
+| `create()` | F1. Writes the four attack drop-downs on the blue strip. The screen stays put. |
 | `onF4()` | Swaps the footer to the second set, or back to the first set. |
 | `onF2()` … `onF12()` | First-set operations, except F4. Each one writes its key name on the label. |
 | `onB1()` … `onB12()` | Second-set operations. There is no `onB4`. Slot 4 is F4 in both sets. |
@@ -388,47 +385,40 @@ It draws twelve buttons and binds F1–F12. It does not decide what the keys mea
 
 | Member | What it does |
 |---|---|
-| `KEYS` | The first twelve labels, `"F1"` through `"F12"`. Public. `onF4` passes this array back when it restores the first set. |
+| `KEYS` | The names in the blue squares, `"F1"` through `"F12"`. Public. Those squares do not change when F4 swaps the set. |
 | `KEY_CODES` | `KeyEvent.VK_F1` through `VK_F12`, in the same order as `KEYS`. Private. The physical keys never change. |
-| `FIRST_FACE` | Light blue `(186, 224, 248)`, the first set. |
-| `SECOND_FACE` | Light orange `(255, 214, 153)`, the second set. |
-| `buttons` | The twelve `JButton` objects. `setLabels` changes these. It does not create a new row. |
+| `KEY_BLUE` | The square colour, `(47, 128, 237)`. |
+| `buttons` | The twelve black `KeyButton` panels. `setLabels` changes the words and the command. It does not create a new row. |
 | `barHeight` | The height, in pixels, passed to the constructor. Stored so `getPreferredSize` can force it. |
-| Constructor `(barHeight, buttonWidth, buttonHeight, listener)` | Builds the row, then `setLabels(KEYS, FIRST_FACE)`. This sample calls `new FunctionKeyBar(64, 56, 40, functionListener)`. |
-| `setLabels(labels, face)` | Writes a new caption, command, and face colour on each button, and rebinds that slot’s physical key. `labels` must have twelve strings. |
+| Constructor `(barHeight, buttonWidth, buttonHeight, listener)` | Builds the row. This sample calls `new FunctionKeyBar(64, 96, 40, functionListener)`, then `setLabels(KEYS, FIRST_TEXT)`. |
+| `setLabels(commands, texts)` | Writes the words beside each blue square, stores the command, and rebinds that slot’s physical key. Both arrays must have twelve strings. |
 | `getPreferredSize` | The superclass width, with the height replaced by `barHeight`. |
 | `getMinimumSize` | The same as the preferred size, so a layout cannot squash the bar below that height. |
 | `getMaximumSize` | The preferred height, and a width of `Integer.MAX_VALUE`, so a vertical layout may stretch the bar across the window. |
 | `bindKey` | Connects one physical key to the shared listener. The map name is the key code, so a later call replaces the previous action. |
 
-Inside the constructor the bar is a `BorderLayout`, opaque, colour `(168, 214, 245)`. A transparent `FlowLayout` row is added at `SOUTH`, so the buttons sit on the bottom of the 64-pixel strip and the spare blue is above them.
+Inside the constructor the bar is a `BorderLayout`, opaque, colour `(168, 214, 245)`. A transparent `GridLayout` row is added at `SOUTH`, so the twelve buttons share the width of the strip and sit on the bottom. The spare blue is above them.
 
-Each button is created empty, then `setLabels` fills it:
+Each button is black. On the left is a blue square, 28 by 22, with `F1` through `F12` in white. To the right of the square, white words name the operation: `Create` on the first key, `Swap` on F4. A click on the square or the words sends the command stored for that slot. The command is `"F1"` while the words say `Create`, and `"B1"` while the words say `Alt 1`.
 
-1. `setText` shows the caption, `F1` or `B1`.
-2. `setActionCommand` stores that same string for the listener.
-3. `setPreferredSize(new Dimension(buttonWidth, buttonHeight))` makes every key the same 56 by 40. That line is in the constructor, before `setLabels`.
-4. The face colour comes from `setLabels`. The first call uses `FIRST_FACE`. Opaque, focus rectangle off, black 2-pixel border.
-5. `addActionListener(listener)` — the single listener from the page, not a new listener per button. That line is also in the constructor.
-6. `bindKey` for the matching `VK_F*` code.
-
-`bindKey` puts `KeyStroke.getKeyStroke(keyCode, 0)` into the window input map under the name `"function-"` plus the key code, and puts an `AbstractAction` in the action map. When the key fires, that action calls `listener.actionPerformed` with a new `ActionEvent`. The source is the bar (`FunctionKeyBar.this`). The command is the caption on that slot. The page never looks at the source. Calling `bindKey` again for the same key code replaces the action, so F1 sends `"B1"` after the swap and `"F1"` after the swap back.
+`bindKey` puts `KeyStroke.getKeyStroke(keyCode, 0)` into the window input map under the name `"function-"` plus the key code, and puts an `AbstractAction` in the action map. When the key fires, that action calls `listener.actionPerformed` with a new `ActionEvent`. The source is the bar (`FunctionKeyBar.this`). The command is the string from `setLabels`, not the words beside the square. The page never looks at the source. Calling `bindKey` again for the same key code replaces the action, so F1 sends `"B1"` after the swap and `"F1"` after the swap back. The blue square still says `F1`.
 
 How you use it:
 
 ```java
-FunctionKeyBar footer = new FunctionKeyBar(64, 56, 40, functionListener);
+FunctionKeyBar footer = new FunctionKeyBar(64, 96, 40, functionListener);
+footer.setLabels(commands, texts);
 page.add(footer, BorderLayout.SOUTH);
 ```
 
-Change `64`, `56`, and `40` to match the other screen. The listener branches on the caption (`"F1"`, `"B1"`, `"F4"`). To add behaviour you edit the listener, not the bar. To swap the captions:
+Change `64`, `96`, and `40` to match the other screen. The listener branches on the command (`"F1"`, `"B1"`, `"F4"`). To add behaviour you edit the listener, not the bar. To swap the words:
 
 ```java
-footer.setLabels(secondLabels, FunctionKeyBar.SECOND_FACE);
-footer.setLabels(FunctionKeyBar.KEYS, FunctionKeyBar.FIRST_FACE);
+footer.setLabels(secondCommands, secondTexts);
+footer.setLabels(FunctionKeyBar.KEYS, firstTexts);
 ```
 
-Keep a `"F4"` in the same slot of both arrays when that key is what switches back.
+Keep `"F4"` in the same slot of both command arrays when that key is what switches back. The blue squares are not in those arrays.
 
 ### `page.WeaponConfigurationPanel` — the form
 
@@ -783,8 +773,8 @@ These are objects the screen creates from JDK classes, without a new `.java` fil
 | The blue panel | `FunctionPage` | Holds `resultLabel` at `NORTH`. Same blue, `(168, 214, 245)`. |
 | The body panel | `FunctionPage` | Transparent. Blue area in `CENTER`, form in `EAST`. |
 | `resultLabel` | `FunctionPage` | Dialog 16 plain. Empty border 16 pixels. Shows the last action. |
-| The F-key row | `FunctionKeyBar` | Transparent flow of twelve buttons. |
-| Each F-key `JButton` | `FunctionKeyBar` | 56 by 40, black border. Pale blue on the first set, light orange on the second set. |
+| The F-key row | `FunctionKeyBar` | Transparent grid of twelve black buttons. |
+| Each function key | `FunctionKeyBar.KeyButton` | Black. Blue square with `F1`–`F12` on the left, white operation words on the right. |
 | Each key `AbstractAction` | `FunctionKeyBar.bindKey` | Turns that key into an `ActionEvent` for the shared listener. |
 | The title bar | `WeaponConfigurationPanel` | Dark bar, title on the west, × on the east. |
 | The title `JLabel` | title bar | White, `TITLE_FONT`. |
@@ -832,10 +822,10 @@ User presses F1
 
 User presses F4
   onF4()
-    setLabels writes B1…B12 and the orange face
+    setLabels writes Alt 1… beside the blue squares
     the F1 key now sends "B1"
   F4 again
-    setLabels writes F1…F12 and the blue face
+    setLabels writes Create, Op 2, … beside the same squares
 ```
 
 `OptionGroup.getSelected` reads `JRadioButton.isSelected` and `getText`. `CheckGroup.getSelected` does the same with `JCheckBox`. `HintField.getValue` reads the `showingHint` flag before it trusts `getText`. `getParameter` reads the map, then `JTextField.getText`. `selected` reads `JComboBox.getSelectedItem`. `readForm` is the only method that performs all of those reads in one place.
@@ -879,11 +869,12 @@ The × button does that already. Wire `getCancelButton()` the same way when Canc
 **Add the footer to a window.**
 
 ```java
-FunctionKeyBar footer = new FunctionKeyBar(64, 56, 40, listener);
+FunctionKeyBar footer = new FunctionKeyBar(64, 96, 40, listener);
+footer.setLabels(commands, texts);
 add(footer, BorderLayout.SOUTH);
 ```
 
-The listener reads `event.getActionCommand()` and compares it to `"F1"`, `"B1"`, `"F4"`, and the rest. F4 calls `setLabels` to swap the twelve captions, and the next F4 swaps them back.
+Each button is black, with `F1` in a blue square and the operation words beside it. The listener reads `event.getActionCommand()` and compares it to `"F1"`, `"B1"`, `"F4"`, and the rest. F4 calls `setLabels` to swap those words, and the next F4 swaps them back. The blue squares stay `F1` through `F12`.
 
 **Build a matching control.**
 
@@ -927,6 +918,6 @@ stack.add(card);
 
 **Change the shared colours.** Edit the constants on `Mono`. `paint`, `field`, `combo`, `button`, `check`, and `radio` all read those constants.
 
-**Change what F1 does.** Edit `FunctionPage.create()`. The bar already delivers the click. **Change what the second set does.** Edit `onB1` and the other `onB` methods. F4 already swaps the captions. Keep `"F4"` in slot 4 of both arrays.
+**Change what F1 does.** Edit `FunctionPage.create()`. The bar already delivers the click. **Change what the second set does.** Edit `onB1` and the other `onB` methods. F4 already swaps the words beside the blue squares. Keep `"F4"` in slot 4 of both command arrays.
 
 **Change what OK saves.** Edit the listener so it passes `readForm()` to the real save method. Edit `EngagementService.create` when this sample is the place that should keep the object.

@@ -10,14 +10,17 @@ import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.plaf.metal.DefaultMetalTheme;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import page.backend.EngagementService;
-import page.model.Engagement;
 
 /**
  * The screen. One listener handles every footer button.
- * F1 calls create(). F4 swaps the footer to a second set of buttons.
+ * The window opens on Engagement Parameters. F1 calls create().
+ * F4 swaps the footer to a second set of buttons.
  * A second F4 restores the first set. The other methods are empty
  * on purpose: fill those in with the functions from the real project.
  *
@@ -28,12 +31,25 @@ public class FunctionPage extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    /** Second set. Slot 4 stays "F4" so the same key can switch back. */
+    /** Commands for the second set. Slot 4 stays "F4" so the same key can switch back. */
     private static final String[] SECOND_KEYS = {
         "B1", "B2", "B3", "F4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12"
     };
 
+    /** Words beside the blue F1–F12 squares on the first set. */
+    private static final String[] FIRST_TEXT = {
+        "Create", "Op 2", "Op 3", "Swap", "Op 5", "Op 6",
+        "Op 7", "Op 8", "Op 9", "Op 10", "Op 11", "Op 12"
+    };
+
+    /** Words beside the blue squares after F4. Slot 4 stays "Swap". */
+    private static final String[] SECOND_TEXT = {
+        "Alt 1", "Alt 2", "Alt 3", "Swap", "Alt 5", "Alt 6",
+        "Alt 7", "Alt 8", "Alt 9", "Alt 10", "Alt 11", "Alt 12"
+    };
+
     private final JLabel resultLabel = new JLabel(" ");
+    private EngagementParametersPanel parameters;
     private FunctionKeyBar footer;
     private boolean secondSet;
 
@@ -107,31 +123,26 @@ public class FunctionPage extends JFrame {
         resultLabel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
         blue.add(resultLabel, BorderLayout.NORTH);
 
-        final WeaponConfigurationPanel form = new WeaponConfigurationPanel();
-        final EngagementService backend = new EngagementService();
-        form.getOkButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                Engagement engagement = form.readForm();
-                backend.create(engagement);
-                resultLabel.setText("Saved " + engagement.getField1()
-                        + " / " + engagement.getGroup1());
-            }
-        });
-        form.getCancelButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                resultLabel.setText("Cancel");
-            }
-        });
+        LookAndFeel previous = UIManager.getLookAndFeel();
+        try {
+            MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme());
+            UIManager.setLookAndFeel(new MetalLookAndFeel());
+        } catch (Exception ex) {
+            /* Keep the look that is already installed. */
+        }
+        parameters = new EngagementParametersPanel();
+        try {
+            UIManager.setLookAndFeel(previous);
+        } catch (Exception ex) {
+            /* Leave the look the form was built with. */
+        }
 
-        JPanel body = new JPanel(new BorderLayout());
-        body.setOpaque(false);
-        body.add(blue, BorderLayout.CENTER);
-        body.add(form, BorderLayout.EAST);
-
-        page.add(body, BorderLayout.CENTER);
+        page.add(blue, BorderLayout.NORTH);
+        page.add(parameters, BorderLayout.CENTER);
 
         /* bar height, button width, button height — change these to fit the other screen */
-        footer = new FunctionKeyBar(64, 56, 40, functionListener);
+        footer = new FunctionKeyBar(64, 96, 40, functionListener);
+        footer.setLabels(FunctionKeyBar.KEYS, FIRST_TEXT);
         page.add(footer, BorderLayout.SOUTH);
 
         setContentPane(page);
@@ -140,9 +151,12 @@ public class FunctionPage extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    /** F1. */
+    /** F1. The engagement screen is already open. This reports the four drop-downs. */
     private void create() {
-        resultLabel.setText("F1 called create()");
+        resultLabel.setText(parameters.getAcousticHeadMode()
+                + " / " + parameters.getAttackMode()
+                + " / " + parameters.getWakeSensor()
+                + " / " + parameters.getGuidanceMode());
     }
 
     /** F2. */
@@ -157,16 +171,16 @@ public class FunctionPage extends JFrame {
 
     /**
      * F4 swaps the footer.
-     * The first press shows B1–B12 (the fourth button stays F4).
-     * The next press restores F1–F12.
+     * The blue squares stay F1–F12. The words beside them change.
+     * The first press shows Alt 1 and the rest. The next press restores Create and the rest.
      */
     private void onF4() {
         secondSet = !secondSet;
         if (secondSet) {
-            footer.setLabels(SECOND_KEYS, FunctionKeyBar.SECOND_FACE);
+            footer.setLabels(SECOND_KEYS, SECOND_TEXT);
             resultLabel.setText("F4 second set");
         } else {
-            footer.setLabels(FunctionKeyBar.KEYS, FunctionKeyBar.FIRST_FACE);
+            footer.setLabels(FunctionKeyBar.KEYS, FIRST_TEXT);
             resultLabel.setText("F4 first set");
         }
     }
